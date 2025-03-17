@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ATM.BusinessLogic\ATM.Logic.csproj" />
+    <ProjectReference Include="..\ATM.Logic\ATM.Logic.csproj" />
   </ItemGroup>
 
 </Project>

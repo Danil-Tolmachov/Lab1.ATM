@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATM.DesktopApp", "ATM.App\ATM.DesktopApp.csproj", "{0B8E5D7B-643E-40BC-A5EB-D90E08A857A4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DA42E000-723C-4CE7-A567-21DA33C7210D} = {DA42E000-723C-4CE7-A567-21DA33C7210D}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ATM.ConsoleApp", "ATM.Console\ATM.ConsoleApp.csproj", "{E6FFC1AB-BA7C-4BA2-B1F1-506BF6D6829F}"
 EndProject

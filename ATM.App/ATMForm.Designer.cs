@@ -47,11 +47,11 @@
             depositPanel = new Panel();
             depositLabel = new Label();
             goBackButton_Deposit = new Button();
-            depositInputTextBox = new TextBox();
+            depositTextBox = new TextBox();
             withdrawPanel = new Panel();
             withdrawLabel = new Label();
             goBackButton_Withdraw = new Button();
-            withdrawInputTextBox = new TextBox();
+            withdrawTextBox = new TextBox();
             keyBoardPanel = new Panel();
             balancePanel = new Panel();
             sendToCardButton = new Button();
@@ -69,7 +69,7 @@
             sendToCardInfoLabel = new Label();
             sendToCardLabel = new Label();
             goBackButton_SendToCard = new Button();
-            SendToCardInputTextBox = new TextBox();
+            sendToCardTextBox = new TextBox();
             nearAtmsPanel = new Panel();
             goBackButton_NearAtm = new Button();
             nearAtmInfoLabel = new Label();
@@ -256,7 +256,7 @@
             // 
             depositPanel.Controls.Add(depositLabel);
             depositPanel.Controls.Add(goBackButton_Deposit);
-            depositPanel.Controls.Add(depositInputTextBox);
+            depositPanel.Controls.Add(depositTextBox);
             depositPanel.Location = new Point(0, 0);
             depositPanel.Name = "depositPanel";
             depositPanel.Size = new Size(780, 600);
@@ -285,21 +285,22 @@
             goBackButton_Deposit.UseVisualStyleBackColor = true;
             goBackButton_Deposit.Click += goBackButton_Deposit_Click;
             // 
-            // depositInputTextBox
+            // depositTextBox
             // 
-            depositInputTextBox.Font = new Font("Segoe UI", 18F);
-            depositInputTextBox.Location = new Point(265, 165);
-            depositInputTextBox.Name = "depositInputTextBox";
-            depositInputTextBox.Size = new Size(250, 39);
-            depositInputTextBox.TabIndex = 4;
-            depositInputTextBox.Tag = "inputTextBox";
-            depositInputTextBox.Click += depositInputTextBox_Click;
+            depositTextBox.Font = new Font("Segoe UI", 18F);
+            depositTextBox.Location = new Point(265, 165);
+            depositTextBox.Name = "depositTextBox";
+            depositTextBox.Size = new Size(250, 39);
+            depositTextBox.TabIndex = 4;
+            depositTextBox.Tag = "inputTextBox";
+            depositTextBox.TextAlign = HorizontalAlignment.Center;
+            depositTextBox.Click += depositInputTextBox_Click;
             // 
             // withdrawPanel
             // 
             withdrawPanel.Controls.Add(withdrawLabel);
             withdrawPanel.Controls.Add(goBackButton_Withdraw);
-            withdrawPanel.Controls.Add(withdrawInputTextBox);
+            withdrawPanel.Controls.Add(withdrawTextBox);
             withdrawPanel.Location = new Point(0, 0);
             withdrawPanel.Name = "withdrawPanel";
             withdrawPanel.Size = new Size(780, 600);
@@ -328,15 +329,16 @@
             goBackButton_Withdraw.UseVisualStyleBackColor = true;
             goBackButton_Withdraw.Click += goBackButton_Withdraw_Click;
             // 
-            // withdrawInputTextBox
+            // withdrawTextBox
             // 
-            withdrawInputTextBox.Font = new Font("Segoe UI", 18F);
-            withdrawInputTextBox.Location = new Point(265, 165);
-            withdrawInputTextBox.Name = "withdrawInputTextBox";
-            withdrawInputTextBox.Size = new Size(250, 39);
-            withdrawInputTextBox.TabIndex = 3;
-            withdrawInputTextBox.Tag = "inputTextBox";
-            withdrawInputTextBox.Click += withdrawInputTextBox_Click;
+            withdrawTextBox.Font = new Font("Segoe UI", 18F);
+            withdrawTextBox.Location = new Point(265, 165);
+            withdrawTextBox.Name = "withdrawTextBox";
+            withdrawTextBox.Size = new Size(250, 39);
+            withdrawTextBox.TabIndex = 3;
+            withdrawTextBox.Tag = "inputTextBox";
+            withdrawTextBox.TextAlign = HorizontalAlignment.Center;
+            withdrawTextBox.Click += withdrawInputTextBox_Click;
             // 
             // keyBoardPanel
             // 
@@ -500,7 +502,7 @@
             sendToCardPanel.Controls.Add(sendToCardInfoLabel);
             sendToCardPanel.Controls.Add(sendToCardLabel);
             sendToCardPanel.Controls.Add(goBackButton_SendToCard);
-            sendToCardPanel.Controls.Add(SendToCardInputTextBox);
+            sendToCardPanel.Controls.Add(sendToCardTextBox);
             sendToCardPanel.Location = new Point(-1, 0);
             sendToCardPanel.Name = "sendToCardPanel";
             sendToCardPanel.Size = new Size(780, 600);
@@ -539,15 +541,16 @@
             goBackButton_SendToCard.UseVisualStyleBackColor = true;
             goBackButton_SendToCard.Click += goBackButton_SendToCard_Click;
             // 
-            // SendToCardInputTextBox
+            // sendToCardTextBox
             // 
-            SendToCardInputTextBox.Font = new Font("Segoe UI", 18F);
-            SendToCardInputTextBox.Location = new Point(265, 165);
-            SendToCardInputTextBox.Name = "SendToCardInputTextBox";
-            SendToCardInputTextBox.Size = new Size(250, 39);
-            SendToCardInputTextBox.TabIndex = 5;
-            SendToCardInputTextBox.Tag = "inputTextBox";
-            SendToCardInputTextBox.Click += SendToCardInputTextBox_Click;
+            sendToCardTextBox.Font = new Font("Segoe UI", 18F);
+            sendToCardTextBox.Location = new Point(265, 165);
+            sendToCardTextBox.Name = "sendToCardTextBox";
+            sendToCardTextBox.Size = new Size(250, 39);
+            sendToCardTextBox.TabIndex = 5;
+            sendToCardTextBox.Tag = "inputTextBox";
+            sendToCardTextBox.TextAlign = HorizontalAlignment.Center;
+            sendToCardTextBox.Click += SendToCardInputTextBox_Click;
             // 
             // nearAtmsPanel
             // 
@@ -692,9 +695,9 @@
         private Panel historyPanel;
         private Panel sendToCardPanel;
         private Panel keyBoardPanel;
-        private TextBox withdrawInputTextBox;
-        private TextBox depositInputTextBox;
-        private TextBox SendToCardInputTextBox;
+        private TextBox withdrawTextBox;
+        private TextBox depositTextBox;
+        private TextBox sendToCardTextBox;
         private Label nearAtmLabel;
         private Label nearAtmInfoLabel;
         private Button goBackButton_NearAtm;

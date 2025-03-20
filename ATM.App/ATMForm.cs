@@ -1,6 +1,11 @@
+using ATM.DesktopApp.Interfaces;
+using ATM.DesktopApp.Pages;
+using ATM.DesktopApp.Utils;
 using ATM.Logic;
+using ATM.Logic.Interfaces;
 using ATM.Logic.Models;
 using ATM.Logic.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Xml.Linq;
 
@@ -8,43 +13,42 @@ namespace ATM.DesktopApp;
 
 public partial class ATMForm : Form
 {
-    private MockDatabase _mockDatabase;
-    private AuthService _authService;
-    private AtmService _atmService;
-    private BankService _bankService;
+    public delegate void ShowPageDelegate(string pageName, bool useKeyboard = false);
+
+    private readonly IServiceProvider _serviceProvider;
+    private Dictionary<string, IWinFormsPage> _pages;
+    private IWinFormsPage _currentPage;
     private Panel _currentVisiblePanel;
-    public ATMForm()
+
+    public ATMForm(IServiceProvider serviceProvider)
     {
         InitializeComponent();
 
-        _mockDatabase = new MockDatabase();
-        _authService = new AuthService(_mockDatabase);
-        _atmService = new AtmService(_mockDatabase);
-        _bankService = new BankService(_mockDatabase);
+        _serviceProvider = serviceProvider;
 
-        ShowLoginPage();
+        InitializePages();
+        ShowPage("Login", true);
     }
 
-    private void ShowLoginPage()
+    private void InitializePages() 
     {
-        loginPanel.Visible = true;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = true;
-        _currentVisiblePanel = loginPanel;
-
-        textLabel.Text = "Enter your card number";
+        _pages = new Dictionary<string, IWinFormsPage>()
+        {
+            { "Login", new LoginPage(loginPanel, _serviceProvider.GetRequiredService<IAuthService>(), ShowPage) },
+            { "MainMenu", new MainMenuPage(mainMenuPanel, _serviceProvider.GetRequiredService<IAuthService>(), ShowPage) },
+            { "Balance", new BalancePage(balancePanel, _serviceProvider.GetRequiredService<IAuthService>(), _serviceProvider.GetRequiredService<IBankService>(), ShowPage) },
+            { "Deposit", new DepositPage(depositPanel,  _serviceProvider.GetRequiredService<IAuthService>(), _serviceProvider.GetRequiredService<IBankService>(), ShowPage) },
+            { "Withdraw", new WithdrawPage(withdrawPanel,  _serviceProvider.GetRequiredService<IAuthService>(), _serviceProvider.GetRequiredService<IBankService>(), ShowPage) },
+            { "SendToCard", new SendToCardPage(sendToCardPanel, _serviceProvider.GetRequiredService<IAuthService>(), _serviceProvider.GetRequiredService<IBankService>(), ShowPage) },
+            { "OperationHistory", new OperationHistoryPage(historyPanel, _serviceProvider.GetRequiredService<IAuthService>(), ShowPage) },
+            { "NearAtms", new NearAtmsPage(nearAtmsPanel, _serviceProvider.GetRequiredService<IAtmService>(), ShowPage) },
+        };
     }
 
-    private void ShowMainMenuPage()
+    private void HideAllPages()
     {
         loginPanel.Visible = false;
-        mainMenuPanel.Visible = true;
+        mainMenuPanel.Visible = false;
         balancePanel.Visible = false;
         withdrawPanel.Visible = false;
         depositPanel.Visible = false;
@@ -52,106 +56,40 @@ public partial class ATMForm : Form
         historyPanel.Visible = false;
         nearAtmsPanel.Visible = false;
         keyBoardPanel.Visible = false;
-        _currentVisiblePanel = mainMenuPanel;
-        mainMenuLabel.Text = $"Welcome, {_authService.GetCurrentUser()?.Name}!";
     }
 
-    private void ShowBalancePage()
+    private void ShowPage(string pageName, bool useKeyboard = false)
     {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = true;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = false;
-        _currentVisiblePanel = balancePanel;
-        balanceLabel.Text = GetBalance();
-    }
+        HideAllPages();
 
-    private void ShowWithdrawPage()
-    {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = true;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = true;
-        _currentVisiblePanel = withdrawPanel;
-    }
+        if (_currentPage != null)
+        {
+            _currentPage.PagePanel.Visible = false;
+        }
 
-    private void ShowDepositPage()
-    {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = true;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = true;
-        _currentVisiblePanel = depositPanel;
-    }
+        if (_pages.ContainsKey(pageName))
+        {
+            _currentPage = _pages[pageName];
+            _currentPage.PagePanel.Visible = true;
+            _currentVisiblePanel = _currentPage.PagePanel;
 
-    private void ShowSendToCardPanel()
-    {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = true;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = true;
-        _currentVisiblePanel = sendToCardPanel;
-        sendToCardLabel.Text = "Enter Card Number";
-    }
+            if (useKeyboard)
+            {
+                keyBoardPanel.Visible = true;
+            }
 
-    private void ShowOperationHistoryPage()
-    {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = true;
-        nearAtmsPanel.Visible = false;
-        keyBoardPanel.Visible = false;
-        _currentVisiblePanel = historyPanel;
-        historyInfoLabel.Text = GetOperationHistory();
-    }
-
-    private void ShowNearAtmsPage()
-    {
-        loginPanel.Visible = false;
-        mainMenuPanel.Visible = false;
-        balancePanel.Visible = false;
-        withdrawPanel.Visible = false;
-        depositPanel.Visible = false;
-        sendToCardPanel.Visible = false;
-        historyPanel.Visible = false;
-        nearAtmsPanel.Visible = true;
-        keyBoardPanel.Visible = false;
-        _currentVisiblePanel = nearAtmsPanel;
-        nearAtmInfoLabel.Text = GetNearAtms();
-    }
-
-    private T FindControlOnCurrentPanel<T>(string controlName) where T : Control
-    {
-        return _currentVisiblePanel?.Controls.OfType<T>().FirstOrDefault(c => (string)c.Tag == controlName);
+            _currentPage.InitializePage();
+        }
+        else
+        {
+            MessageBox.Show($"Page {pageName} doesn't found!");
+            ShowPage("Login", true);
+        }
     }
 
     private void buttonDigit1_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -162,7 +100,7 @@ public partial class ATMForm : Form
     private void buttonDigit2_Click(object sender, EventArgs e)
     {
 
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -172,7 +110,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit3_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -182,7 +120,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit4_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -192,7 +130,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit5_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -202,7 +140,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit6_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -212,7 +150,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit7_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -222,7 +160,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit8_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -232,7 +170,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit9_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -242,7 +180,7 @@ public partial class ATMForm : Form
 
     private void buttonDigit0_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -252,7 +190,7 @@ public partial class ATMForm : Form
 
     private void buttonBackspace_Click(object sender, EventArgs e)
     {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
+        TextBox currentInputTextBox = RenderHelper.FindControlOnPanelByTag<TextBox>("inputTextBox", _currentPage.PagePanel);
 
         if (currentInputTextBox != null)
         {
@@ -266,197 +204,22 @@ public partial class ATMForm : Form
 
     private void buttonEnter_Click(object sender, EventArgs e)
     {
-        RunAction();
-    }
-
-    private void RunAction()
-    {
-        TextBox currentInputTextBox = FindControlOnCurrentPanel<TextBox>("inputTextBox");
-        Label currentStatusLabel = FindControlOnCurrentPanel<Label>("statusLabel");
-
-        if (_currentVisiblePanel == loginPanel)
+        if (_currentPage != null)
         {
-            Label currentInfoLabel = FindControlOnCurrentPanel<Label>("infoLabel");
+            Dictionary<string, Action> actions = _currentPage.GetActions();
+            string actionName = _currentPage.CurrentActionName;
 
-            if (currentInputTextBox != null && currentInputTextBox.PasswordChar == '\0')
+            if (actions.ContainsKey(actionName))
             {
-                currentInfoLabel.Visible = false;
-                currentInfoLabel.Text = currentInputTextBox.Text;
-                currentInputTextBox.Text = string.Empty;
-                currentInputTextBox.PasswordChar = '*';
-                currentStatusLabel.Text = "Enter your PIN";
-                currentInputTextBox.Focus();
-            }
-            else if (currentInputTextBox != null && currentInputTextBox.PasswordChar != '\0')
-            {
-                currentInputTextBox.PasswordChar = '\0';
-                DataProcessing(new List<Control> { currentInputTextBox, currentInfoLabel, currentStatusLabel });
+                actions[actionName].Invoke();
             }
             else
             {
-                throw new ArgumentException("Invalid input");
+                MessageBox.Show($"Action {actionName} doesn't found for this page!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        else if (_currentVisiblePanel == sendToCardPanel)
-        {
-            Label currentInfoLabel = FindControlOnCurrentPanel<Label>("infoLabel");
-
-            if (currentInputTextBox != null)
-            {
-                if (currentStatusLabel.Text == "Enter Card Number")
-                {
-                    currentInfoLabel.Text = currentInputTextBox.Text;
-                    currentInputTextBox.Text = string.Empty;
-                    if (currentStatusLabel != null)
-                    {
-                        currentStatusLabel.Text = "Enter Amount";
-                    }
-                }
-                else
-                {
-                    DataProcessing(new List<Control> { currentInputTextBox, currentInfoLabel });
-
-                }
-            }
-        }
-
-        else 
-        {
-            DataProcessing(new List<Control> { currentInputTextBox });
         }
     }
-
-    private void DataProcessing(List<Control> elements)
-    {
-        if (_currentVisiblePanel == loginPanel)
-        {
-            string cardNumber = elements[1].Text;
-            string pin = elements[0].Text;
-
-            if (cardNumber == null || pin == null)
-            {
-                ClearElements(elements);
-
-                throw new InvalidOperationException("Invalid input");
-            }
-
-            var user = _authService.Login(cardNumber, pin);
-
-            if (user != null)
-            {
-                ClearElements(elements);
-                ShowMainMenuPage();
-            }
-            else
-            {
-                elements[2].Text = "Failed to authorize...";
-                elements[1].Text = "Invalid Card Number or PIN-code.";
-                elements[1].Visible = true;
-                ClearElements(elements);
-                ShowLoginPage();
-
-                //throw new InvalidOperationException("Failed to authorize user.");
-            }
-        }
-
-        if (_currentVisiblePanel == sendToCardPanel) 
-        {
-            string cardNumber = elements[1].Text;
-            string amount = elements[0].Text;
-            ClearElements(elements);
-
-            var user = _authService.GetCurrentUser()
-                ?? throw new ArgumentException("User is not authorized");
-
-            if (!decimal.TryParse(amount, out decimal result)
-                && string.IsNullOrEmpty(cardNumber))
-            {
-                throw new InvalidOperationException("Invalid input");
-            }
-
-            _bankService.SendToAccount(user.Id, cardNumber ?? string.Empty, result);
-            ShowBalancePage();
-        }
-
-        if (_currentVisiblePanel == withdrawPanel) 
-        {
-            string amount = elements[0].Text;
-            ClearElements(elements);
-
-            var user = _authService.GetCurrentUser()
-                ?? throw new ArgumentException("User is not authorized");
-            
-            if (!decimal.TryParse(amount, out decimal result))
-            {
-                throw new InvalidOperationException("Invalid input");
-            }
-
-            _bankService.Withdraw(user.Id, result);
-            ShowBalancePage();
-        }
-
-        if (_currentVisiblePanel == depositPanel)
-        {
-            string amount = elements[0].Text;
-            ClearElements(elements);
-
-            var user = _authService.GetCurrentUser()
-                ?? throw new ArgumentException("User is not authorized");
-
-            if (!decimal.TryParse(amount, out decimal result))
-            {
-                throw new InvalidOperationException("Invalid input");
-            }
-
-            _bankService.Deposit(user.Id, result);
-            ShowBalancePage();
-        }
-    }
-
-    private void ClearElements(List<Control> elements)
-    {
-        foreach (Control control in elements)
-        {
-            control.Text = string.Empty;
-        }
-    }
-
-    private string GetBalance()
-    {
-        var user = _authService.GetCurrentUser()
-            ?? throw new ArgumentException("User is not authorized");
-
-        var balance = _bankService.GetBalance(user.Id);
-        
-        return $"Balance of \"{user?.Name}\" account is - {balance}";
-    }
-
-    private string GetNearAtms()
-    {
-        var sb = new StringBuilder("Near ATMs:\n\n");
-
-        foreach (var atm in _atmService.GetAll())
-        {
-            sb.AppendLine($"[ID: {atm.Id}]: Street: {atm.Address}");
-        }
-
-        return sb.ToString();
-    }
-
-    private string GetOperationHistory()
-    {
-        var user = _authService.GetCurrentUser();
-
-        var sb = new StringBuilder("Operations:\n\n");
-
-        foreach (var transaction in user?.Transactions ?? [])
-        {
-            sb.AppendLine($"[{transaction.Time}]: {transaction.Ammount}");
-        }
-
-        return sb.ToString();
-    }
+     
 
     private void inputTextBox_Click(object sender, EventArgs e)
     {
@@ -481,66 +244,105 @@ public partial class ATMForm : Form
 
     private void goBackButton_Balance_Click(object sender, EventArgs e)
     {
-        ShowMainMenuPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_Deposit_Click(object sender, EventArgs e)
     {
-        ShowBalancePage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_History_Click(object sender, EventArgs e)
     {
-        ShowMainMenuPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_MainMenu_Click(object sender, EventArgs e)
     {
-        ShowLoginPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_nearAtm_Click(object sender, EventArgs e)
     {
-        ShowMainMenuPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_SendToCard_Click(object sender, EventArgs e)
     {
-        ShowBalancePage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void goBackButton_Withdraw_Click(object sender, EventArgs e)
     {
-        ShowBalancePage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("GoBack"))
+        {
+            _currentPage.GetActions()["GoBack"].Invoke();
+        }
     }
 
     private void showBalancePageButton_Click(object sender, EventArgs e)
     {
-        ShowBalancePage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("Balance"))
+        { 
+            _currentPage.GetActions()["Balance"].Invoke();
+        }
     }
 
     private void showHistoryPageButton_Click(object sender, EventArgs e)
     {
-        ShowOperationHistoryPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("OperationHistory"))
+        { 
+            _currentPage.GetActions()["OperationHistory"].Invoke();
+        }
     }
 
     private void showNearAtmPageButton_Click(object sender, EventArgs e)
     {
-        ShowNearAtmsPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("NearAtms"))
+        { 
+            _currentPage.GetActions()["NearAtms"].Invoke();
+        }
     }
 
     private void depositButton_Click(object sender, EventArgs e)
     {
-        ShowDepositPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("Deposit"))
+        { 
+            _currentPage.GetActions()["Deposit"].Invoke();
+        }
     }
 
     private void withdrawButton_Click(object sender, EventArgs e)
     {
-        ShowWithdrawPage();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("Withdraw"))
+        { 
+            _currentPage.GetActions()["Withdraw"].Invoke();
+        }
     }
 
     private void sendToCardButton_Click(object sender, EventArgs e)
     {
-        ShowSendToCardPanel();
+        if (_currentPage != null && _currentPage.GetActions().ContainsKey("SendToCard"))
+        { 
+            _currentPage.GetActions()["SendToCard"].Invoke();
+        }
     }
 }

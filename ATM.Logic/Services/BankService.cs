@@ -25,7 +25,7 @@ public class BankService(MockDatabase mockDatabase) : IBankService
         var account = mockDatabase.Accounts.Find(a => a.Id == accountId)
             ?? throw new ArgumentException("Not existing account id was provided.");
 
-        if (account.Balance + ammount < 0)
+        if (account.Balance + ammount < 0 || ammount <= 0)
         {
             throw new ArgumentException("Invaid cash ammount was provided.");
         }
@@ -41,7 +41,7 @@ public class BankService(MockDatabase mockDatabase) : IBankService
         var account = mockDatabase.Accounts.Find(a => a.Id == accountId)
             ?? throw new ArgumentException("Not existing account id was provided.");
 
-        if (account.Balance - ammount < 0)
+        if (account.Balance - ammount < 0 || ammount <= 0)
         {
             throw new ArgumentException("Not enough cash to process transaction.");
         }
@@ -60,7 +60,7 @@ public class BankService(MockDatabase mockDatabase) : IBankService
         var accountTo = mockDatabase.Accounts.Find(a => a.CardNumber == cardNumber)
             ?? throw new ArgumentException("Not existing account to id was provided.");
 
-        if (ammount < 0)
+        if (ammount <= 0)
         {
             throw new ArgumentException("Invaid cash ammount was provided.");
         }
